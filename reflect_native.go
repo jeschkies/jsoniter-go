@@ -443,7 +443,7 @@ func (codec *base64Codec) Encode(ptr unsafe.Pointer, stream *Stream) {
 		size := encoding.EncodedLen(len(src))
 		buf := make([]byte, size)
 		encoding.Encode(buf, src)
-		stream.buf = append(stream.buf, buf...)
+		stream.Write(buf)
 	}
 	stream.writeByte('"')
 }

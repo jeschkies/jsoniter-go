@@ -7,12 +7,36 @@ import (
 // stream is a io.Writer like object, with JSON specific write functions.
 // Error is not returned as return value, but stored as Error member on this stream instance.
 type Stream struct {
-	cfg        *frozenConfig
-	out        io.Writer
-	buf        []byte
+	cfg *frozenConfig
+	//out        io.Writer
+	//buf        []byte
+	internalStreamAPI
 	Error      error
 	indention  int
 	Attachment interface{} // open for customized encoder
+}
+
+type internalStreamAPI interface {
+	Reset(out io.Writer)
+	Available() int
+	Buffered() int
+	Buffer() []byte
+	SetBuffer(buf []byte)
+	Flush() error
+	Write(p []byte) (nn int, err error)
+	WriteRaw(s string)
+	writeFirstBuf(v uint32)
+	writeBuf(v uint32)
+	writeByte(byte)
+	writeTwoBytes(c1 byte, c2 byte)
+	writeThreeBytes(c1 byte, c2 byte, c3 byte)
+	writeFourBytes(c1 byte, c2 byte, c3 byte, c4 byte)
+	writeFiveBytes(c1 byte, c2 byte, c3 byte, c4 byte, c5 byte)
+}
+
+type bufferedStream struct {
+	out io.Writer
+	buf []byte
 }
 
 // NewStream create new stream instance.
@@ -21,9 +45,11 @@ type Stream struct {
 // bufSize is the initial size for the internal buffer in bytes.
 func NewStream(cfg API, out io.Writer, bufSize int) *Stream {
 	return &Stream{
-		cfg:       cfg.(*frozenConfig),
-		out:       out,
-		buf:       make([]byte, 0, bufSize),
+		cfg: cfg.(*frozenConfig),
+		internalStreamAPI: &bufferedStream{
+			out: out,
+			buf: make([]byte, 0, bufSize),
+		},
 		Error:     nil,
 		indention: 0,
 	}
@@ -35,28 +61,28 @@ func (stream *Stream) Pool() StreamPool {
 }
 
 // Reset reuse this stream instance by assign a new writer
-func (stream *Stream) Reset(out io.Writer) {
+func (stream *bufferedStream) Reset(out io.Writer) {
 	stream.out = out
 	stream.buf = stream.buf[:0]
 }
 
 // Available returns how many bytes are unused in the buffer.
-func (stream *Stream) Available() int {
+func (stream *bufferedStream) Available() int {
 	return cap(stream.buf) - len(stream.buf)
 }
 
 // Buffered returns the number of bytes that have been written into the current buffer.
-func (stream *Stream) Buffered() int {
+func (stream *bufferedStream) Buffered() int {
 	return len(stream.buf)
 }
 
 // Buffer if writer is nil, use this method to take the result
-func (stream *Stream) Buffer() []byte {
+func (stream *bufferedStream) Buffer() []byte {
 	return stream.buf
 }
 
 // SetBuffer allows to append to the internal buffer directly
-func (stream *Stream) SetBuffer(buf []byte) {
+func (stream *bufferedStream) SetBuffer(buf []byte) {
 	stream.buf = buf
 }
 
@@ -64,7 +90,7 @@ func (stream *Stream) SetBuffer(buf []byte) {
 // It returns the number of bytes written.
 // If nn < len(p), it also returns an error explaining
 // why the write is short.
-func (stream *Stream) Write(p []byte) (nn int, err error) {
+func (stream *bufferedStream) Write(p []byte) (nn int, err error) {
 	stream.buf = append(stream.buf, p...)
 	if stream.out != nil {
 		nn, err = stream.out.Write(stream.buf)
@@ -75,39 +101,40 @@ func (stream *Stream) Write(p []byte) (nn int, err error) {
 }
 
 // WriteByte writes a single byte.
-func (stream *Stream) writeByte(c byte) {
+func (stream *bufferedStream) writeByte(c byte) {
 	stream.buf = append(stream.buf, c)
 }
 
-func (stream *Stream) writeTwoBytes(c1 byte, c2 byte) {
+func (stream *bufferedStream) writeTwoBytes(c1 byte, c2 byte) {
 	stream.buf = append(stream.buf, c1, c2)
 }
 
-func (stream *Stream) writeThreeBytes(c1 byte, c2 byte, c3 byte) {
+func (stream *bufferedStream) writeThreeBytes(c1 byte, c2 byte, c3 byte) {
 	stream.buf = append(stream.buf, c1, c2, c3)
 }
 
-func (stream *Stream) writeFourBytes(c1 byte, c2 byte, c3 byte, c4 byte) {
+func (stream *bufferedStream) writeFourBytes(c1 byte, c2 byte, c3 byte, c4 byte) {
 	stream.buf = append(stream.buf, c1, c2, c3, c4)
 }
 
-func (stream *Stream) writeFiveBytes(c1 byte, c2 byte, c3 byte, c4 byte, c5 byte) {
+func (stream *bufferedStream) writeFiveBytes(c1 byte, c2 byte, c3 byte, c4 byte, c5 byte) {
 	stream.buf = append(stream.buf, c1, c2, c3, c4, c5)
 }
 
 // Flush writes any buffered data to the underlying io.Writer.
-func (stream *Stream) Flush() error {
-	if stream.out == nil {
-		return nil
-	}
+func (stream Stream) Flush() error {
 	if stream.Error != nil {
 		return stream.Error
 	}
+	return stream.internalStreamAPI.Flush()
+}
+
+func (stream *bufferedStream) Flush() error {
+	if stream.out == nil {
+		return nil
+	}
 	_, err := stream.out.Write(stream.buf)
 	if err != nil {
-		if stream.Error == nil {
-			stream.Error = err
-		}
 		return err
 	}
 	stream.buf = stream.buf[:0]
@@ -115,7 +142,7 @@ func (stream *Stream) Flush() error {
 }
 
 // WriteRaw write string out without quotes, just like []byte
-func (stream *Stream) WriteRaw(s string) {
+func (stream *bufferedStream) WriteRaw(s string) {
 	stream.buf = append(stream.buf, s...)
 }
 
@@ -205,6 +232,6 @@ func (stream *Stream) writeIndention(delta int) {
 	stream.writeByte('\n')
 	toWrite := stream.indention - delta
 	for i := 0; i < toWrite; i++ {
-		stream.buf = append(stream.buf, ' ')
+		stream.writeByte(' ')
 	}
 }

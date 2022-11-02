@@ -26,15 +26,17 @@ func (stream *Stream) WriteFloat32(val float32) {
 			fmt = 'e'
 		}
 	}
-	stream.buf = strconv.AppendFloat(stream.buf, float64(val), fmt, -1, 32)
+	buf := make([]byte, 0, 0)
+	buf = strconv.AppendFloat(buf, float64(val), fmt, -1, 32)
 	if fmt == 'e' {
 		// clean up e-09 to e-9
-		n := len(stream.buf)
-		if n >= 4 && stream.buf[n-4] == 'e' && stream.buf[n-3] == '-' && stream.buf[n-2] == '0' {
-			stream.buf[n-2] = stream.buf[n-1]
-			stream.buf = stream.buf[:n-1]
+		n := len(buf)
+		if n >= 4 && buf[n-4] == 'e' && buf[n-3] == '-' && buf[n-2] == '0' {
+			buf[n-2] = buf[n-1]
+			buf = buf[:n-1]
 		}
 	}
+	stream.Write(buf)
 }
 
 // WriteFloat32Lossy write float32 to stream with ONLY 6 digits precision although much much faster
@@ -64,9 +66,9 @@ func (stream *Stream) WriteFloat32Lossy(val float32) {
 		stream.writeByte('0')
 	}
 	stream.WriteUint64(fval)
-	for stream.buf[len(stream.buf)-1] == '0' {
-		stream.buf = stream.buf[:len(stream.buf)-1]
-	}
+	//for stream.buf[len(stream.buf)-1] == '0' {
+	//	stream.buf = stream.buf[:len(stream.buf)-1]
+	//}
 }
 
 // WriteFloat64 write float64 to stream
@@ -83,15 +85,17 @@ func (stream *Stream) WriteFloat64(val float64) {
 			fmt = 'e'
 		}
 	}
-	stream.buf = strconv.AppendFloat(stream.buf, float64(val), fmt, -1, 64)
+	buf := make([]byte, 0, 0)
+	buf = strconv.AppendFloat(buf, float64(val), fmt, -1, 64)
 	if fmt == 'e' {
 		// clean up e-09 to e-9
-		n := len(stream.buf)
-		if n >= 4 && stream.buf[n-4] == 'e' && stream.buf[n-3] == '-' && stream.buf[n-2] == '0' {
-			stream.buf[n-2] = stream.buf[n-1]
-			stream.buf = stream.buf[:n-1]
+		n := len(buf)
+		if n >= 4 && buf[n-4] == 'e' && buf[n-3] == '-' && buf[n-2] == '0' {
+			buf[n-2] = buf[n-1]
+			buf = buf[:n-1]
 		}
 	}
+	stream.Write(buf)
 }
 
 // WriteFloat64Lossy write float64 to stream with ONLY 6 digits precision although much much faster
@@ -121,7 +125,7 @@ func (stream *Stream) WriteFloat64Lossy(val float64) {
 		stream.writeByte('0')
 	}
 	stream.WriteUint64(fval)
-	for stream.buf[len(stream.buf)-1] == '0' {
-		stream.buf = stream.buf[:len(stream.buf)-1]
-	}
+	//for stream.buf[len(stream.buf)-1] == '0' {
+	//	stream.buf = stream.buf[:len(stream.buf)-1]
+	//}
 }

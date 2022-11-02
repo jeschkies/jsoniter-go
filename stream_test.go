@@ -8,7 +8,10 @@ import (
 
 func Test_writeByte_should_grow_buffer(t *testing.T) {
 	should := require.New(t)
-	stream := NewStream(ConfigDefault, nil, 1)
+	stream := bufferedStream{
+		out: nil,
+		buf: make([]byte, 0, 1),
+	}
 	stream.writeByte('1')
 	should.Equal("1", string(stream.Buffer()))
 	should.Equal(1, len(stream.buf))
@@ -21,7 +24,10 @@ func Test_writeByte_should_grow_buffer(t *testing.T) {
 
 func Test_writeBytes_should_grow_buffer(t *testing.T) {
 	should := require.New(t)
-	stream := NewStream(ConfigDefault, nil, 1)
+	stream := bufferedStream{
+		out: nil,
+		buf: make([]byte, 0, 1),
+	}
 	stream.Write([]byte{'1', '2'})
 	should.Equal("12", string(stream.Buffer()))
 	should.Equal(2, len(stream.buf))
