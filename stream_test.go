@@ -42,6 +42,7 @@ func Test_writeIndention_should_grow_buffer(t *testing.T) {
 	var w strings.Builder
 	stream := NewStream(Config{IndentionStep: 2}.Froze(), &w, 1)
 	stream.WriteVal([]int{1, 2, 3})
+	stream.Flush()
 	should.Equal("[\n  1,\n  2,\n  3\n]", w.String())
 }
 
