@@ -1,9 +1,11 @@
 package jsoniter
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"reflect"
+	"strings"
 	"sync"
 	"unsafe"
 
@@ -284,23 +286,27 @@ func (cfg *frozenConfig) cleanEncoders() {
 }
 
 func (cfg *frozenConfig) MarshalToString(v interface{}) (string, error) {
-	stream := cfg.BorrowStream(nil)
+	var w strings.Builder
+	stream := cfg.BorrowStream(&w)
 	defer cfg.ReturnStream(stream)
 	stream.WriteVal(v)
+	stream.Flush()
 	if stream.Error != nil {
 		return "", stream.Error
 	}
-	return string(stream.Buffer()), nil
+	return w.String(), nil
 }
 
 func (cfg *frozenConfig) Marshal(v interface{}) ([]byte, error) {
-	stream := cfg.BorrowStream(nil)
+	var w bytes.Buffer
+	stream := cfg.BorrowStream(&w)
 	defer cfg.ReturnStream(stream)
 	stream.WriteVal(v)
+	stream.Flush()
 	if stream.Error != nil {
 		return nil, stream.Error
 	}
-	result := stream.Buffer()
+	result := w.Bytes()
 	copied := make([]byte, len(result))
 	copy(copied, result)
 	return copied, nil

@@ -14,7 +14,7 @@ func init() {
 	}
 }
 
-func (stream *bufferedStream) writeFirstBuf(v uint32) {
+func (stream *Stream) writeFirstBuf(v uint32) {
 	start := v >> 24
 	if start == 0 {
 		stream.writeTwoBytes(byte(v>>16), byte(v>>8))
@@ -24,7 +24,7 @@ func (stream *bufferedStream) writeFirstBuf(v uint32) {
 	stream.writeByte(byte(v))
 }
 
-func (stream *bufferedStream) writeBuf(v uint32) {
+func (stream *Stream) writeBuf(v uint32) {
 	stream.writeThreeBytes(byte(v>>16), byte(v>>8), byte(v))
 }
 

@@ -1,6 +1,7 @@
 package jsoniter
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -22,11 +23,9 @@ type internalStreamAPI interface {
 	Buffered() int
 	Buffer() []byte
 	SetBuffer(buf []byte)
-	Flush() error
+	flush() error
 	Write(p []byte) (nn int, err error)
 	WriteRaw(s string)
-	writeFirstBuf(v uint32)
-	writeBuf(v uint32)
 	writeByte(byte)
 	writeTwoBytes(c1 byte, c2 byte)
 	writeThreeBytes(c1 byte, c2 byte, c3 byte)
@@ -39,6 +38,10 @@ type bufferedStream struct {
 	buf []byte
 }
 
+type unbufferedStream struct {
+	out io.Writer
+}
+
 // NewStream create new stream instance.
 // cfg can be jsoniter.ConfigDefault.
 // out can be nil if write to internal buffer.
@@ -46,9 +49,9 @@ type bufferedStream struct {
 func NewStream(cfg API, out io.Writer, bufSize int) *Stream {
 	return &Stream{
 		cfg: cfg.(*frozenConfig),
-		internalStreamAPI: &bufferedStream{
+		internalStreamAPI: &unbufferedStream{
 			out: out,
-			buf: make([]byte, 0, bufSize),
+			//	buf: make([]byte, 0, bufSize),
 		},
 		Error:     nil,
 		indention: 0,
@@ -126,10 +129,10 @@ func (stream Stream) Flush() error {
 	if stream.Error != nil {
 		return stream.Error
 	}
-	return stream.internalStreamAPI.Flush()
+	return stream.internalStreamAPI.flush()
 }
 
-func (stream *bufferedStream) Flush() error {
+func (stream *bufferedStream) flush() error {
 	if stream.out == nil {
 		return nil
 	}
@@ -234,4 +237,80 @@ func (stream *Stream) writeIndention(delta int) {
 	for i := 0; i < toWrite; i++ {
 		stream.writeByte(' ')
 	}
+}
+
+// Reset reuse this stream instance by assign a new writer
+func (stream *unbufferedStream) Reset(out io.Writer) {
+	stream.out = out
+}
+
+// Available returns how many bytes are unused in the buffer.
+func (stream *unbufferedStream) Available() int {
+	return 0
+}
+
+// Buffered returns the number of bytes that have been written into the current buffer.
+func (stream *unbufferedStream) Buffered() int {
+	return 0
+}
+
+// Buffer if writer is nil, use this method to take the result
+func (stream *unbufferedStream) Buffer() []byte {
+	fmt.Print("Return empty buffer")
+	return nil
+}
+
+// SetBuffer allows to append to the internal buffer directly
+func (stream *unbufferedStream) SetBuffer(buf []byte) {
+	return
+}
+
+// Write writes the contents of p into the buffer.
+// It returns the number of bytes written.
+// If nn < len(p), it also returns an error explaining
+// why the write is short.
+func (stream *unbufferedStream) Write(p []byte) (nn int, err error) {
+	if stream.out != nil {
+		nn, err = stream.out.Write(p)
+		return
+	}
+	return 0, nil
+}
+
+// WriteByte writes a single byte.
+func (stream *unbufferedStream) writeByte(c byte) {
+	stream.Write([]byte{c})
+}
+
+func (stream *unbufferedStream) writeTwoBytes(c1 byte, c2 byte) {
+	stream.Write([]byte{c1, c2})
+}
+
+func (stream *unbufferedStream) writeThreeBytes(c1 byte, c2 byte, c3 byte) {
+	stream.Write([]byte{c1, c2, c3})
+}
+
+func (stream *unbufferedStream) writeFourBytes(c1 byte, c2 byte, c3 byte, c4 byte) {
+	stream.Write([]byte{c1, c2, c3, c4})
+}
+
+func (stream *unbufferedStream) writeFiveBytes(c1 byte, c2 byte, c3 byte, c4 byte, c5 byte) {
+	stream.Write([]byte{c1, c2, c3, c4, c5})
+}
+
+type Flusher interface {
+	Flush() error
+}
+
+func (stream *unbufferedStream) flush() error {
+	w, ok := stream.out.(Flusher)
+	if ok {
+		return w.Flush()
+	}
+	return nil
+}
+
+// WriteRaw write string out without quotes, just like []byte
+func (stream *unbufferedStream) WriteRaw(s string) {
+	stream.Write([]byte(s))
 }

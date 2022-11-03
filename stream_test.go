@@ -1,6 +1,7 @@
 package jsoniter
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -38,9 +39,10 @@ func Test_writeBytes_should_grow_buffer(t *testing.T) {
 
 func Test_writeIndention_should_grow_buffer(t *testing.T) {
 	should := require.New(t)
-	stream := NewStream(Config{IndentionStep: 2}.Froze(), nil, 1)
+	var w strings.Builder
+	stream := NewStream(Config{IndentionStep: 2}.Froze(), &w, 1)
 	stream.WriteVal([]int{1, 2, 3})
-	should.Equal("[\n  1,\n  2,\n  3\n]", string(stream.Buffer()))
+	should.Equal("[\n  1,\n  2,\n  3\n]", w.String())
 }
 
 func Test_writeRaw_should_grow_buffer(t *testing.T) {

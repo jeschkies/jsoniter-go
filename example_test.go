@@ -56,13 +56,14 @@ func ExampleConfigFastest_Marshal() {
 		Name:   "Reds",
 		Colors: []string{"Crimson", "Red", "Ruby", "Maroon"},
 	}
-	stream := ConfigFastest.BorrowStream(nil)
+	var w strings.Builder
+	stream := ConfigFastest.BorrowStream(&w)
 	defer ConfigFastest.ReturnStream(stream)
 	stream.WriteVal(group)
 	if stream.Error != nil {
 		fmt.Println("error:", stream.Error)
 	}
-	os.Stdout.Write(stream.Buffer())
+	os.Stdout.Write([]byte(w.String()))
 	// Output:
 	// {"ID":1,"Name":"Reds","Colors":["Crimson","Red","Ruby","Maroon"]}
 }
