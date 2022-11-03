@@ -49,6 +49,18 @@ type unbufferedStream struct {
 func NewStream(cfg API, out io.Writer, bufSize int) *Stream {
 	return &Stream{
 		cfg: cfg.(*frozenConfig),
+		internalStreamAPI: &bufferedStream{
+			out: out,
+			buf: make([]byte, 0, bufSize),
+		},
+		Error:     nil,
+		indention: 0,
+	}
+}
+
+func NewUnbufferedStream(cfg API, out io.Writer, bufSize int) *Stream {
+	return &Stream{
+		cfg: cfg.(*frozenConfig),
 		internalStreamAPI: &unbufferedStream{
 			out: out,
 			//	buf: make([]byte, 0, bufSize),
