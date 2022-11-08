@@ -40,6 +40,7 @@ type bufferedStream struct {
 
 type unbufferedStream struct {
 	out io.Writer
+	arr [5]byte
 }
 
 // NewStream create new stream instance.
@@ -291,23 +292,28 @@ func (stream *unbufferedStream) Write(p []byte) (nn int, err error) {
 
 // WriteByte writes a single byte.
 func (stream *unbufferedStream) writeByte(c byte) {
-	stream.Write([]byte{c})
+	stream.arr[0] = c
+	stream.Write(stream.arr[:1])
 }
 
 func (stream *unbufferedStream) writeTwoBytes(c1 byte, c2 byte) {
-	stream.Write([]byte{c1, c2})
+	stream.arr[0], stream.arr[1] = c1, c2
+	stream.Write(stream.arr[:2])
 }
 
 func (stream *unbufferedStream) writeThreeBytes(c1 byte, c2 byte, c3 byte) {
-	stream.Write([]byte{c1, c2, c3})
+	stream.arr[0], stream.arr[1], stream.arr[2] = c1, c2, c3
+	stream.Write(stream.arr[:3])
 }
 
 func (stream *unbufferedStream) writeFourBytes(c1 byte, c2 byte, c3 byte, c4 byte) {
-	stream.Write([]byte{c1, c2, c3, c4})
+	stream.arr[0], stream.arr[1], stream.arr[2], stream.arr[3] = c1, c2, c3, c4
+	stream.Write(stream.arr[:4])
 }
 
 func (stream *unbufferedStream) writeFiveBytes(c1 byte, c2 byte, c3 byte, c4 byte, c5 byte) {
-	stream.Write([]byte{c1, c2, c3, c4, c5})
+	stream.arr[0], stream.arr[1], stream.arr[2], stream.arr[3], stream.arr[4] = c1, c2, c3, c4, c5
+	stream.Write(stream.arr[:5])
 }
 
 type Flusher interface {
