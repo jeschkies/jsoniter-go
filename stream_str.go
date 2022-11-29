@@ -220,19 +220,19 @@ var hex = "0123456789abcdef"
 // WriteStringWithHTMLEscaped write string to stream with html special characters escaped
 func (stream *Stream) WriteStringWithHTMLEscaped(s string) {
 	valLen := len(s)
-	stream.buf = append(stream.buf, '"')
+	stream.writeByte('"')
 	// write string, the fast path, without utf8 and escape support
 	i := 0
 	for ; i < valLen; i++ {
 		c := s[i]
 		if c < utf8.RuneSelf && htmlSafeSet[c] {
-			stream.buf = append(stream.buf, c)
+			stream.writeByte(c)
 		} else {
 			break
 		}
 	}
 	if i == valLen {
-		stream.buf = append(stream.buf, '"')
+		stream.writeByte('"')
 		return
 	}
 	writeStringSlowPathWithHTMLEscaped(stream, i, s, valLen)
@@ -310,19 +310,19 @@ func writeStringSlowPathWithHTMLEscaped(stream *Stream, i int, s string, valLen 
 // WriteString write string to stream without html escape
 func (stream *Stream) WriteString(s string) {
 	valLen := len(s)
-	stream.buf = append(stream.buf, '"')
+	stream.writeByte('"')
 	// write string, the fast path, without utf8 and escape support
 	i := 0
 	for ; i < valLen; i++ {
 		c := s[i]
 		if c > 31 && c != '"' && c != '\\' {
-			stream.buf = append(stream.buf, c)
+			stream.writeByte(c)
 		} else {
 			break
 		}
 	}
 	if i == valLen {
-		stream.buf = append(stream.buf, '"')
+		stream.writeByte('"')
 		return
 	}
 	writeStringSlowPath(stream, i, s, valLen)

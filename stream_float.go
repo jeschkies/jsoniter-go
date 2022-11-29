@@ -35,6 +35,9 @@ func (stream *Stream) WriteFloat32(val float32) {
 			stream.buf = stream.buf[:n-1]
 		}
 	}
+
+
+	// TODO: flush
 }
 
 // WriteFloat32Lossy write float32 to stream with ONLY 6 digits precision although much much faster
