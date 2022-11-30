@@ -10,7 +10,7 @@ type Stream struct {
 	cfg        *frozenConfig
 	out        io.Writer
 	buf        []byte
-	flushOnMax bool
+	autoFlush  bool
 	Error      error
 	indention  int
 	Attachment interface{} // open for customized encoder
@@ -25,7 +25,7 @@ func NewStream(cfg API, out io.Writer, bufSize int) *Stream {
 		cfg:       cfg.(*frozenConfig),
 		out:       out,
 		buf:       make([]byte, 0, bufSize),
-		flushOnMax: false,
+		autoFlush: false,
 		Error:     nil,
 		indention: 0,
 	}
@@ -36,7 +36,7 @@ func NewStreamWithMaxBuffer(cfg API, out io.Writer, bufSize int) *Stream {
 		cfg:       cfg.(*frozenConfig),
 		out:       out,
 		buf:       make([]byte, 0, bufSize),
-		flushOnMax: true,
+		autoFlush: true,
 		Error:     nil,
 		indention: 0,
 	}
@@ -89,35 +89,35 @@ func (stream *Stream) Write(p []byte) (nn int, err error) {
 
 // WriteByte writes a single byte.
 func (stream *Stream) writeByte(c byte) {
-	if stream.flushOnMax && stream.Available() <= 0 {
+	if stream.autoFlush && stream.Available() <= 0 {
 		stream.Flush()
 	}
 	stream.buf = append(stream.buf, c)
 }
 
 func (stream *Stream) writeTwoBytes(c1 byte, c2 byte) {
-	if stream.flushOnMax && stream.Available() <= 1 {
+	if stream.autoFlush && stream.Available() <= 1 {
 		stream.Flush()
 	}
 	stream.buf = append(stream.buf, c1, c2)
 }
 
 func (stream *Stream) writeThreeBytes(c1 byte, c2 byte, c3 byte) {
-	if stream.flushOnMax && stream.Available() <= 2 {
+	if stream.autoFlush && stream.Available() <= 2 {
 		stream.Flush()
 	}
 	stream.buf = append(stream.buf, c1, c2, c3)
 }
 
 func (stream *Stream) writeFourBytes(c1 byte, c2 byte, c3 byte, c4 byte) {
-	if stream.flushOnMax && stream.Available() <= 3 {
+	if stream.autoFlush && stream.Available() <= 3 {
 		stream.Flush()
 	}
 	stream.buf = append(stream.buf, c1, c2, c3, c4)
 }
 
 func (stream *Stream) writeFiveBytes(c1 byte, c2 byte, c3 byte, c4 byte, c5 byte) {
-	if stream.flushOnMax && stream.Available() <= 4 {
+	if stream.autoFlush && stream.Available() <= 4 {
 		stream.Flush()
 	}
 	stream.buf = append(stream.buf, c1, c2, c3, c4, c5)
@@ -145,7 +145,7 @@ func (stream *Stream) Flush() error {
 // WriteRaw write string out without quotes, just like []byte
 func (stream *Stream) WriteRaw(s string) {
 	stream.buf = append(stream.buf, s...)
-	if stream.flushOnMax {
+	if stream.autoFlush {
 		stream.Flush()
 	}
 }

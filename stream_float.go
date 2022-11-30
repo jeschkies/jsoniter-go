@@ -18,6 +18,11 @@ func (stream *Stream) WriteFloat32(val float32) {
 		stream.Error = fmt.Errorf("unsupported value: %f", val)
 		return
 	}
+
+	if stream.autoFlush {
+		stream.Flush()
+	}
+
 	abs := math.Abs(float64(val))
 	fmt := byte('f')
 	// Note: Must use float32 comparisons for underlying float32 value to get precise cutoffs right.
@@ -35,9 +40,6 @@ func (stream *Stream) WriteFloat32(val float32) {
 			stream.buf = stream.buf[:n-1]
 		}
 	}
-
-
-	// TODO: flush
 }
 
 // WriteFloat32Lossy write float32 to stream with ONLY 6 digits precision although much much faster
@@ -46,6 +48,11 @@ func (stream *Stream) WriteFloat32Lossy(val float32) {
 		stream.Error = fmt.Errorf("unsupported value: %f", val)
 		return
 	}
+
+	if stream.autoFlush {
+		stream.Flush()
+	}
+
 	if val < 0 {
 		stream.writeByte('-')
 		val = -val
